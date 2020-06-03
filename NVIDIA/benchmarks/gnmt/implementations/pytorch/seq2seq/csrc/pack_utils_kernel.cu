@@ -1,6 +1,6 @@
 #include <ATen/ATen.h>
 #include "ATen/cuda/CUDAContext.h"
-#include <torch/torch.h>
+#include <torch/extension.h>
 namespace at { namespace native {
 
     namespace {
@@ -51,7 +51,7 @@ namespace at { namespace native {
        }
        int numThreads = 512;
        int numBlocks = batch_size * seq_length;
-       auto offsets_tensor = at::CPU(kLong).tensorFromBlob(offsets.data(), batch_size * seq_length).toType(CUDA(kLong), true);
+       auto offsets_tensor = from_blob(offsets.data(), batch_size * seq_length).to(CUDA(kLong), true);
 //       auto offsets_tensor_gpu = at::empty_like(offsets_tensor, 
        AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "revert_varlen", [&] {
        revert_varlen_kernel<<<numBlocks, numThreads, 0, at::cuda::getCurrentCUDAStream()>>>(

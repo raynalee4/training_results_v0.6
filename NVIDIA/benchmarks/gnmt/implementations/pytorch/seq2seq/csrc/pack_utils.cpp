@@ -1,7 +1,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 
-#include <torch/torch.h>
+#include <torch/extension.h>
 
 namespace at { namespace native {
 

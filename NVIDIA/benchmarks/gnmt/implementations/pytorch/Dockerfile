@@ -24,9 +24,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies
 WORKDIR /workspace/rnn_translator
 
-COPY requirements.txt .
+COPY NVIDIA/benchmarks/gnmt/implementations/pytorch/Dockerfile/requirements.txt .
 RUN pip install --no-cache-dir https://github.com/mlperf/training/archive/6289993e1e9f0f5c4534336df83ff199bd0cdb75.zip#subdirectory=compliance \
  && pip install --no-cache-dir -r requirements.txt
+
+RUN source scl_source enable rh-python36 devtoolset-7 && \
+    pip install --upgrade pip && pip install -r rnn_translator/requirements.txt && \
+	git clone https://www.github.com/nvidia/apex && \
+	cd apex && \
+	python setup.py install
 
 # Copy & build extensions
 COPY seq2seq/csrc seq2seq/csrc

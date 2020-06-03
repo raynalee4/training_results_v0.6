@@ -1,0 +1,61 @@
+# Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM nvidia/cuda:10.0-cudnn7-devel-centos7
+
+# Copy GNMT code
+ADD NVIDIA/benchmarks/gnmt/implementations/ /rnn_translator
+
+ENV CUDA_HOME /usr/local/cuda
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64
+ENV PATH $PATH:$CUDA_HOME/bin
+ENV PYENV_ROOT $HOME/.pyenv
+ENV PATH $PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
+
+RUN yum install -y centos-release-scl && \
+  yum install devtoolset-7 rh-python36 -y
+
+# Install dependencies for system configuration logger
+RUN source scl_source enable devtoolset-7 rh-python36 && \
+    yum update -y && yum install -y \
+    infiniband-diags \
+    pciutils \
+    git \
+    curl \
+    wget \
+    unzip \
+    numactl \
+    which && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /rnn_translator
+RUN chmod +x download_dataset.sh verify_dataset.sh
+RUN source scl_source enable devtoolset-7 rh-python36 && \
+    pip install --upgrade pip && \
+	pip install --no-cache-dir https://github.com/mlperf/training/archive/6289993e1e9f0f5c4534336df83ff199bd0cdb75.zip#subdirectory=compliance && \
+	pip install --no-cache-dir -r pytorch/requirements.txt
+
+RUN source scl_source enable rh-python36 devtoolset-7 && \
+    pip install --upgrade pip && \
+	git clone https://www.github.com/nvidia/apex && \
+	cd apex && \
+	python setup.py install --xentropy
+
+RUN source scl_source enable rh-python36 devtoolset-7 && \
+	cd pytorch && \
+    pip install .
+
+# Configure environment variables
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
